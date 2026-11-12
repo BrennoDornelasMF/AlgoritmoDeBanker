@@ -7,6 +7,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
+
+
 typedef struct{
     size_t n, m;
     int *available;
@@ -99,4 +101,48 @@ static void close_input(FILE *file, const char *name)
         fprintf(stderr, "Erro ao fechar %s.\n", name);
         exit(EXIT_FAILURE);
     }
+}
+
+static void read_customers(Bank *bank)
+{
+    const char *name = "customer.txt";
+    FILE *file = open_file(name, "r");
+    char *line = NULL;
+    size_t capacity = 0;
+    ssize_t length;
+
+    while ((length = getline(&line, &capacity, file)) != -1) {
+        check_line(line, length, name, bank->n + 1);
+        if (bank->n >= SIZE_MAX / bank->m)
+            fail("quantidade de clientes muito grande");
+        size_t cells = (bank->n + 1) * bank->m;
+        bank->maximum = resize(bank->maximum, cells, sizeof(int));
+        const char *cursor = line;
+
+        for (size_t j = 0; j < bank->m; ++j) {
+            int *cell = &bank->maximum[bank->n * bank->m + j];
+            if (!read_number(&cursor, cell))
+                input_error(name, bank->n + 1, "esperado inteiro entre 0 e INT_MAX");
+            cursor = skip_space(cursor);
+            if (j + 1 < bank->m) {
+                if (*cursor != ',')
+                    input_error(name, bank->n + 1, "quantidade de recursos ou separador incorreto");
+                ++cursor;
+            } else if (*cursor != '\0') {
+                input_error(name, bank->n + 1, "valores extras ou formato incorreto");
+            }
+        }
+        ++bank->n;
+    }
+
+    free(line);
+    close_input(file, name);
+    if (bank->n == 0)
+        fail("customer.txt vazio");
+    size_t cells = bank->n * bank->m;
+    bank->allocation = zeroed(cells, sizeof(int));
+    bank->need = zeroed(cells, sizeof(int));
+    memcpy(bank->need, bank->maximum, cells * sizeof(int));
+    bank->work = zeroed(bank->m, sizeof(int));
+    bank->finish = zeroed(bank->n, sizeof(bool));
 }
