@@ -1,0 +1,794 @@
+Script started on 2026-11-12 09:30:16-03:00 [COMMAND="bash relatorio/registrar_evidencias.sh" TERM="dumb" TTY="/dev/pts/6" COLUMNS="98" LINES="40"]
+
+=== REVISAO DO RELATORIO: ALGORITMO DO BANQUEIRO ===
+$ date --iso-8601=seconds
+2026-11-12T09:30:16-03:00
+$ whoami
+bdmf
+$ pwd
+/home/bdmf/Code/SO/AlgoritmoDeBanker
+$ uname -srm
+Linux 7.0.0-43-generic x86_64
+$ cc --version
+cc (Ubuntu 15.2.0-16ubuntu1) 15.2.0
+Copyright (C) 2025 Free Software Foundation, Inc.
+This is free software; see the source for copying conditions.  There is NO
+warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+$ make --version
+GNU Make 4.4.1
+Built for x86_64-pc-linux-gnu
+Copyright (C) 1988-2023 Free Software Foundation, Inc.
+License GPLv3+: GNU GPL version 3 or later <https://gnu.org/licenses/gpl.html>
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+$ sha256sum banker.c Makefile customer.txt commands.txt
+233b30e0a362eb3435652bc34d4c031268db195d1c2f121240ec5c07855582a1  banker.c
+a11513028b32a877333188af4611c49970c7d0ad953a44686ca9d2a58a679dc2  Makefile
+aba101b1745d664d57565288f6287251889d099d18ae6deb6d349e8e7bc08465  customer.txt
+c24d9ef9a2387b7a7f7903122747d9f6a44eb39350802f2538e52a7acf765685  commands.txt
+[H[2J[3J
+[E01] 2026-11-12T09:30:16-03:00 | Reproducao controlada do erro de compilacao relatado
+$ python3 relatorio/validar.py erro-compilacao
+REPRODUCAO CONTROLADA do erro relatado; fonte original preservado.
+Copia temporaria sem _POSIX_C_SOURCE e sem read_commands.
+$ make
+cc  -std=c11 -Wall -Wextra -Wpedantic -O2 banker.c   -o banker
+banker.c: In function ‘read_customers’:
+banker.c:114:22: error: implicit declaration of function ‘getline’ [-Wimplicit-function-declaration]
+  114 |     while ((length = getline(&line, &capacity, file)) != -1) {
+      |                      ^~~~~~~
+banker.c: In function ‘main’:
+banker.c:292:25: error: implicit declaration of function ‘read_commands’ [-Wimplicit-function-declaration]
+  292 |     Command *commands = read_commands(&bank, &count);
+      |                         ^~~~~~~~~~~~~
+banker.c:292:25: error: initialization of ‘Command *’ from ‘int’ makes pointer from integer without a cast [-Wint-conversion]
+make: *** [Makefile:12: banker] Error 1
+[retorno: 2]
+REPRODUCAO CONFIRMADA: falha esperada, sem alterar banker.c.
+
+GRUPO erro-compilacao: 1 caso(s) aprovado(s).
+
+[CAPTURA-01] Erro reproduzido em copia isolada; falha esperada.
+Pressione Enter para continuar a validacao. 
+[H[2J[3J
+[E02] 2026-11-12T09:30:16-03:00 | Limpeza e compilacao da implementacao corrigida
+$ make clean
+rm -f banker
+$ make
+cc  -std=c11 -Wall -Wextra -Wpedantic -O2 banker.c   -o banker
+
+[E03] 2026-11-12T09:30:16-03:00 | Execucao com os arquivos fornecidos pelo professor
+$ ./banker 10 5 7
+$ cat result.txt
+Allocate to customer 0 the resources 0 2 1
+Allocate to customer 2 the resources 3 0 2
+Allocate to customer 1 the resources 2 0 0
+Allocate to customer 4 the resources 0 0 2
+Release from customer 0 the resources 0 1 1
+Allocate to customer 3 the resources 2 1 1
+MAXIMUM | ALLOCATION | NEED
+7 5 3 | 0 1 0 | 7 4 3
+3 2 2 | 2 0 0 | 1 2 2
+9 0 2 | 3 0 2 | 6 0 0
+2 2 2 | 2 1 1 | 0 1 1
+4 3 3 | 0 0 2 | 4 3 1
+AVAILABLE 3 3 2
+The resources 3 3 2 are not enough to customer 4 request 4 0 0
+Allocate to customer 1 the resources 1 0 2
+The customer 0 request 0 2 0 was denied because result in an unsafe state
+The customer 2 request 0 1 0 was denied because exceed its maximum allocation
+$ diff -u relatorio/esperado_professor.txt result.txt
+CONFERENCIA APROVADA: result.txt coincide com o resultado esperado.
+
+[CAPTURA-02] Compilacao e saida final conferidas.
+Pressione Enter para continuar a validacao. 
+
+[E04] 2026-11-12T09:30:17-03:00 | Restauracao do estado apos recusa por inseguranca
+$ python3 relatorio/validar.py rollback
+
+CASO: rollback apos estado inseguro
+customer.txt: '7,5,3\n3,2,2\n9,0,2\n2,2,2\n4,3,3'
+commands.txt: 'RQ 0 0 2 1\nRQ 2 3 0 2\nRQ 1 2 0 0\nRQ 4 0 0 2\nRL 0 0 1 1\nRQ 3 2 1 1\n*\nRQ 4 4 0 0\nRQ 1 1 0 2\n*\nRQ 0 0 2 0\n*\n'
+$ ./banker 10 5 7
+[retorno: 0]
+$ cat result.txt
+Allocate to customer 0 the resources 0 2 1
+Allocate to customer 2 the resources 3 0 2
+Allocate to customer 1 the resources 2 0 0
+Allocate to customer 4 the resources 0 0 2
+Release from customer 0 the resources 0 1 1
+Allocate to customer 3 the resources 2 1 1
+MAXIMUM | ALLOCATION | NEED
+7 5 3 | 0 1 0 | 7 4 3
+3 2 2 | 2 0 0 | 1 2 2
+9 0 2 | 3 0 2 | 6 0 0
+2 2 2 | 2 1 1 | 0 1 1
+4 3 3 | 0 0 2 | 4 3 1
+AVAILABLE 3 3 2
+The resources 3 3 2 are not enough to customer 4 request 4 0 0
+Allocate to customer 1 the resources 1 0 2
+MAXIMUM | ALLOCATION | NEED
+7 5 3 | 0 1 0 | 7 4 3
+3 2 2 | 3 0 2 | 0 2 0
+9 0 2 | 3 0 2 | 6 0 0
+2 2 2 | 2 1 1 | 0 1 1
+4 3 3 | 0 0 2 | 4 3 1
+AVAILABLE 2 3 0
+The customer 0 request 0 2 0 was denied because result in an unsafe state
+MAXIMUM | ALLOCATION | NEED
+7 5 3 | 0 1 0 | 7 4 3
+3 2 2 | 3 0 2 | 0 2 0
+9 0 2 | 3 0 2 | 6 0 0
+2 2 2 | 2 1 1 | 0 1 1
+4 3 3 | 0 0 2 | 4 3 1
+AVAILABLE 2 3 0
+CONFERENCIA: consultas antes/depois identicas; AVAILABLE 2 3 0.
+APROVADO: rollback apos estado inseguro
+
+GRUPO rollback: 1 caso(s) aprovado(s).
+
+[E05] 2026-11-12T09:30:17-03:00 | Tratamento de argumentos, arquivos e comandos invalidos
+$ python3 relatorio/validar.py invalidos
+
+CASO: sem argumentos
+customer.txt: '7,5,3\n3,2,2\n9,0,2\n2,2,2\n4,3,3'
+commands.txt: 'RQ 0 0 2 1\nRQ 2 3 0 2\nRQ 1 2 0 0\nRQ 4 0 0 2\nRL 0 0 1 1\nRQ 3 2 1 1\n*\nRQ 4 4 0 0\nRQ 1 1 0 2\nRQ 0 0 2 0\nRQ 2 0 1 0'
+$ ./banker
+Erro: uso: ./banker quantidade_R0 [quantidade_R1 ...]. 
+[retorno: 1]
+APROVADO: sem argumentos
+
+CASO: argumento negativo
+customer.txt: '7,5,3\n3,2,2\n9,0,2\n2,2,2\n4,3,3'
+commands.txt: 'RQ 0 0 2 1\nRQ 2 3 0 2\nRQ 1 2 0 0\nRQ 4 0 0 2\nRL 0 0 1 1\nRQ 3 2 1 1\n*\nRQ 4 4 0 0\nRQ 1 1 0 2\nRQ 0 0 2 0\nRQ 2 0 1 0'
+$ ./banker -1 5 7
+Erro: cada argumento deve ser um inteiro entre 0 e INT_MAX. 
+[retorno: 1]
+APROVADO: argumento negativo
+
+CASO: argumento nao numerico
+customer.txt: '7,5,3\n3,2,2\n9,0,2\n2,2,2\n4,3,3'
+commands.txt: 'RQ 0 0 2 1\nRQ 2 3 0 2\nRQ 1 2 0 0\nRQ 4 0 0 2\nRL 0 0 1 1\nRQ 3 2 1 1\n*\nRQ 4 4 0 0\nRQ 1 1 0 2\nRQ 0 0 2 0\nRQ 2 0 1 0'
+$ ./banker abc 5 7
+Erro: cada argumento deve ser um inteiro entre 0 e INT_MAX. 
+[retorno: 1]
+APROVADO: argumento nao numerico
+
+CASO: argumentos incompatíveis com customer
+customer.txt: '7,5,3\n3,2,2\n9,0,2\n2,2,2\n4,3,3'
+commands.txt: 'RQ 0 0 2 1\nRQ 2 3 0 2\nRQ 1 2 0 0\nRQ 4 0 0 2\nRL 0 0 1 1\nRQ 3 2 1 1\n*\nRQ 4 4 0 0\nRQ 1 1 0 2\nRQ 0 0 2 0\nRQ 2 0 1 0'
+$ ./banker 10 5
+Erro em customer.txt, linha 1: valores extras ou formato incorreto.
+[retorno: 1]
+APROVADO: argumentos incompatíveis com customer
+
+CASO: customer ausente
+customer.txt: ausente
+commands.txt: 'RQ 0 0 2 1\nRQ 2 3 0 2\nRQ 1 2 0 0\nRQ 4 0 0 2\nRL 0 0 1 1\nRQ 3 2 1 1\n*\nRQ 4 4 0 0\nRQ 1 1 0 2\nRQ 0 0 2 0\nRQ 2 0 1 0'
+$ ./banker 10 5 7
+Erro ao abrir customer.txt: No such file or directory.
+[retorno: 1]
+APROVADO: customer ausente
+
+CASO: commands ausente
+customer.txt: '7,5,3\n3,2,2\n9,0,2\n2,2,2\n4,3,3'
+commands.txt: ausente
+$ ./banker 10 5 7
+Erro ao abrir commands.txt: No such file or directory.
+[retorno: 1]
+APROVADO: commands ausente
+
+CASO: arquivo sem permissao de leitura
+customer.txt: sem permissao de leitura
+commands.txt: 'RQ 0 0 2 1\nRQ 2 3 0 2\nRQ 1 2 0 0\nRQ 4 0 0 2\nRL 0 0 1 1\nRQ 3 2 1 1\n*\nRQ 4 4 0 0\nRQ 1 1 0 2\nRQ 0 0 2 0\nRQ 2 0 1 0'
+$ ./banker 10 5 7
+Erro ao abrir customer.txt: Permission denied.
+[retorno: 1]
+APROVADO: arquivo sem permissao de leitura
+
+CASO: separador CSV incorreto
+customer.txt: '7 5 3\n'
+commands.txt: 'RQ 0 0 2 1\nRQ 2 3 0 2\nRQ 1 2 0 0\nRQ 4 0 0 2\nRL 0 0 1 1\nRQ 3 2 1 1\n*\nRQ 4 4 0 0\nRQ 1 1 0 2\nRQ 0 0 2 0\nRQ 2 0 1 0'
+$ ./banker 10 5 7
+Erro em customer.txt, linha 1: quantidade de recursos ou separador incorreto.
+[retorno: 1]
+APROVADO: separador CSV incorreto
+
+CASO: linha vazia de cliente
+customer.txt: '\n'
+commands.txt: 'RQ 0 0 2 1\nRQ 2 3 0 2\nRQ 1 2 0 0\nRQ 4 0 0 2\nRL 0 0 1 1\nRQ 3 2 1 1\n*\nRQ 4 4 0 0\nRQ 1 1 0 2\nRQ 0 0 2 0\nRQ 2 0 1 0'
+$ ./banker 10 5 7
+Erro em customer.txt, linha 1: esperado inteiro entre 0 e INT_MAX.
+[retorno: 1]
+APROVADO: linha vazia de cliente
+
+CASO: comando incompleto
+customer.txt: '7,5,3\n3,2,2\n9,0,2\n2,2,2\n4,3,3'
+commands.txt: 'RQ 0 1 0\n'
+$ ./banker 10 5 7
+Erro em commands.txt, linha 1: esperado um inteiro nao negativo por recurso.
+[retorno: 1]
+APROVADO: comando incompleto
+
+CASO: comando com valores extras
+customer.txt: '7,5,3\n3,2,2\n9,0,2\n2,2,2\n4,3,3'
+commands.txt: 'RQ 0 1 0 0 1\n'
+$ ./banker 10 5 7
+Erro em commands.txt, linha 1: valores extras ou formato incorreto.
+[retorno: 1]
+APROVADO: comando com valores extras
+
+CASO: cliente inexistente
+customer.txt: '7,5,3\n3,2,2\n9,0,2\n2,2,2\n4,3,3'
+commands.txt: 'RQ 5 0 0 0\n'
+$ ./banker 10 5 7
+Erro em commands.txt, linha 1: indice de cliente invalido.
+[retorno: 1]
+APROVADO: cliente inexistente
+
+CASO: comando desconhecido
+customer.txt: '7,5,3\n3,2,2\n9,0,2\n2,2,2\n4,3,3'
+commands.txt: 'XYZ 0 0 0 0\n'
+$ ./banker 10 5 7
+Erro em commands.txt, linha 1: comando esperado: RQ, RL ou *.
+[retorno: 1]
+APROVADO: comando desconhecido
+
+CASO: quantidade negativa
+customer.txt: '7,5,3\n3,2,2\n9,0,2\n2,2,2\n4,3,3'
+commands.txt: 'RQ 0 -1 0 0\n'
+$ ./banker 10 5 7
+Erro em commands.txt, linha 1: esperado um inteiro nao negativo por recurso.
+[retorno: 1]
+APROVADO: quantidade negativa
+
+CASO: arquivo de comandos vazio
+customer.txt: '7,5,3\n3,2,2\n9,0,2\n2,2,2\n4,3,3'
+commands.txt: ''
+$ ./banker 10 5 7
+Erro: commands.txt vazio. 
+[retorno: 1]
+APROVADO: arquivo de comandos vazio
+
+CASO: inteiro fora do intervalo
+customer.txt: '7,5,3\n3,2,2\n9,0,2\n2,2,2\n4,3,3'
+commands.txt: 'RQ 0 0 2 1\nRQ 2 3 0 2\nRQ 1 2 0 0\nRQ 4 0 0 2\nRL 0 0 1 1\nRQ 3 2 1 1\n*\nRQ 4 4 0 0\nRQ 1 1 0 2\nRQ 0 0 2 0\nRQ 2 0 1 0'
+$ ./banker 2147483648 5 7
+Erro: cada argumento deve ser um inteiro entre 0 e INT_MAX. 
+[retorno: 1]
+APROVADO: inteiro fora do intervalo
+
+GRUPO invalidos: 16 caso(s) aprovado(s).
+
+[E06] 2026-11-12T09:30:17-03:00 | Dimensoes variaveis e casos limite
+$ python3 relatorio/validar.py dimensoes
+
+CASO: dois clientes e quatro recursos
+customer.txt: '2,1,1,3\n1,1,0,2\n'
+commands.txt: 'RQ 0 1 0 0 1\nRL 0 1 0 0 1\n*\n'
+$ ./banker 2 1 1 3
+[retorno: 0]
+$ cat result.txt
+Allocate to customer 0 the resources 1 0 0 1
+Release from customer 0 the resources 1 0 0 1
+MAXIMUM | ALLOCATION | NEED
+2 1 1 3 | 0 0 0 0 | 2 1 1 3
+1 1 0 2 | 0 0 0 0 | 1 1 0 2
+AVAILABLE 2 1 1 3
+APROVADO: dois clientes e quatro recursos
+
+CASO: um cliente e um recurso; sem newline final
+customer.txt: '2'
+commands.txt: 'RQ 0 2\nRL 0 1\n*'
+$ ./banker 2
+[retorno: 0]
+$ cat result.txt
+Allocate to customer 0 the resources 2
+Release from customer 0 the resources 1
+MAXIMUM | ALLOCATION | NEED
+2 | 1 | 1
+AVAILABLE 1
+APROVADO: um cliente e um recurso; sem newline final
+
+GRUPO dimensoes: 2 caso(s) aprovado(s).
+$ python3 relatorio/validar.py limites
+
+CASO: recursos e demandas zero
+customer.txt: '0,0,0\n'
+commands.txt: 'RQ 0 0 0 0\nRL 0 0 0 0\n*\n'
+$ ./banker 0 0 0
+[retorno: 0]
+$ cat result.txt
+Allocate to customer 0 the resources 0 0 0
+Release from customer 0 the resources 0 0 0
+MAXIMUM | ALLOCATION | NEED
+0 0 0 | 0 0 0 | 0 0 0
+AVAILABLE 0 0 0
+APROVADO: recursos e demandas zero
+
+CASO: quantidade no limite de int
+customer.txt: '2147483647\n'
+commands.txt: 'RQ 0 2147483647\nRL 0 2147483647\n*\n'
+$ ./banker 2147483647
+[retorno: 0]
+$ cat result.txt
+Allocate to customer 0 the resources 2147483647
+Release from customer 0 the resources 2147483647
+MAXIMUM | ALLOCATION | NEED
+2147483647 | 0 | 2147483647
+AVAILABLE 2147483647
+APROVADO: quantidade no limite de int
+
+GRUPO limites: 2 caso(s) aprovado(s).
+
+[E07] 2026-11-12T09:30:17-03:00 | Liberacao invalida e continuidade da execucao
+$ python3 relatorio/validar.py liberacao
+
+CASO: liberacao invalida preserva o vetor inteiro e permite continuar
+customer.txt: '2,2\n'
+commands.txt: 'RQ 0 1 1\nRL 0 1 2\n*\nRL 0 1 1\n*\n'
+$ ./banker 2 2
+[retorno: 0]
+$ cat result.txt
+Allocate to customer 0 the resources 1 1
+The customer 0 release 1 2 was denied because exceed its current allocation
+MAXIMUM | ALLOCATION | NEED
+2 2 | 1 1 | 1 1
+AVAILABLE 1 1
+Release from customer 0 the resources 1 1
+MAXIMUM | ALLOCATION | NEED
+2 2 | 0 0 | 2 2
+AVAILABLE 2 2
+APROVADO: liberacao invalida preserva o vetor inteiro e permite continuar
+
+GRUPO liberacao: 1 caso(s) aprovado(s).
+
+[E08] 2026-11-12T09:30:17-03:00 | Compilacao com avisos tratados como erro e nova conferencia
+$ make clean
+rm -f banker
+$ make CFLAGS=-std=c11\ -Wall\ -Wextra\ -Wpedantic\ -Werror\ -O2
+cc  -std=c11 -Wall -Wextra -Wpedantic -Werror -O2 banker.c   -o banker
+$ ./banker 10 5 7
+$ diff -u relatorio/esperado_professor.txt result.txt
+
+VALIDACAO CONCLUIDA: E01 a E08 aprovadas.
+$ date --iso-8601=seconds
+2026-11-12T09:30:18-03:00
+
+Script done on 2026-11-12 09:30:18-03:00 [COMMAND_EXIT_CODE="0"]
+Script started on 2026-11-12 09:32:07-03:00 [COMMAND="bash relatorio/registrar_evidencias.sh" TERM="dumb" TTY="/dev/pts/6" COLUMNS="98" LINES="40"]
+
+=== REVISAO DO RELATORIO: ALGORITMO DO BANQUEIRO ===
+$ date --iso-8601=seconds
+2026-11-12T09:32:07-03:00
+$ whoami
+bdmf
+$ pwd
+/home/bdmf/Code/SO/AlgoritmoDeBanker
+$ uname -srm
+Linux 7.0.0-43-generic x86_64
+$ cc --version
+cc (Ubuntu 15.2.0-16ubuntu1) 15.2.0
+Copyright (C) 2025 Free Software Foundation, Inc.
+This is free software; see the source for copying conditions.  There is NO
+warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+$ make --version
+GNU Make 4.4.1
+Built for x86_64-pc-linux-gnu
+Copyright (C) 1988-2023 Free Software Foundation, Inc.
+License GPLv3+: GNU GPL version 3 or later <https://gnu.org/licenses/gpl.html>
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+$ sha256sum banker.c Makefile customer.txt commands.txt
+233b30e0a362eb3435652bc34d4c031268db195d1c2f121240ec5c07855582a1  banker.c
+a11513028b32a877333188af4611c49970c7d0ad953a44686ca9d2a58a679dc2  Makefile
+aba101b1745d664d57565288f6287251889d099d18ae6deb6d349e8e7bc08465  customer.txt
+c24d9ef9a2387b7a7f7903122747d9f6a44eb39350802f2538e52a7acf765685  commands.txt
+[H[2J[3J
+[E01] 2026-11-12T09:32:07-03:00 | Reproducao controlada do erro de compilacao relatado
+$ python3 relatorio/validar.py erro-compilacao
+REPRODUCAO CONTROLADA do erro relatado; fonte original preservado.
+Copia temporaria sem _POSIX_C_SOURCE e sem read_commands.
+$ make
+cc  -std=c11 -Wall -Wextra -Wpedantic -O2 banker.c   -o banker
+banker.c: In function ‘read_customers’:
+banker.c:114:22: error: implicit declaration of function ‘getline’ [-Wimplicit-function-declaration]
+  114 |     while ((length = getline(&line, &capacity, file)) != -1) {
+      |                      ^~~~~~~
+banker.c: In function ‘main’:
+banker.c:292:25: error: implicit declaration of function ‘read_commands’ [-Wimplicit-function-declaration]
+  292 |     Command *commands = read_commands(&bank, &count);
+      |                         ^~~~~~~~~~~~~
+banker.c:292:25: error: initialization of ‘Command *’ from ‘int’ makes pointer from integer without a cast [-Wint-conversion]
+make: *** [Makefile:12: banker] Error 1
+[retorno: 2]
+REPRODUCAO CONFIRMADA: falha esperada, sem alterar banker.c.
+
+GRUPO erro-compilacao: 1 caso(s) aprovado(s).
+
+[CAPTURA-01] Erro reproduzido em copia isolada; falha esperada.
+Pressione Enter para continuar a validacao. 
+[H[2J[3J
+[E02] 2026-11-12T09:32:07-03:00 | Limpeza e compilacao da implementacao corrigida
+$ make clean
+rm -f banker
+$ make
+cc  -std=c11 -Wall -Wextra -Wpedantic -O2 banker.c   -o banker
+
+[E03] 2026-11-12T09:32:07-03:00 | Execucao com os arquivos fornecidos pelo professor
+$ ./banker 10 5 7
+$ cat result.txt
+Allocate to customer 0 the resources 0 2 1
+Allocate to customer 2 the resources 3 0 2
+Allocate to customer 1 the resources 2 0 0
+Allocate to customer 4 the resources 0 0 2
+Release from customer 0 the resources 0 1 1
+Allocate to customer 3 the resources 2 1 1
+MAXIMUM | ALLOCATION | NEED
+7 5 3 | 0 1 0 | 7 4 3
+3 2 2 | 2 0 0 | 1 2 2
+9 0 2 | 3 0 2 | 6 0 0
+2 2 2 | 2 1 1 | 0 1 1
+4 3 3 | 0 0 2 | 4 3 1
+AVAILABLE 3 3 2
+The resources 3 3 2 are not enough to customer 4 request 4 0 0
+Allocate to customer 1 the resources 1 0 2
+The customer 0 request 0 2 0 was denied because result in an unsafe state
+The customer 2 request 0 1 0 was denied because exceed its maximum allocation
+$ diff -u relatorio/esperado_professor.txt result.txt
+CONFERENCIA APROVADA: result.txt coincide com o resultado esperado.
+
+[CAPTURA-02] Compilacao e saida final conferidas.
+Pressione Enter para continuar a validacao. 
+
+[E04] 2026-11-12T09:32:08-03:00 | Restauracao do estado apos recusa por inseguranca
+$ python3 relatorio/validar.py rollback
+
+CASO: rollback apos estado inseguro
+customer.txt: '7,5,3\n3,2,2\n9,0,2\n2,2,2\n4,3,3'
+commands.txt: 'RQ 0 0 2 1\nRQ 2 3 0 2\nRQ 1 2 0 0\nRQ 4 0 0 2\nRL 0 0 1 1\nRQ 3 2 1 1\n*\nRQ 4 4 0 0\nRQ 1 1 0 2\n*\nRQ 0 0 2 0\n*\n'
+$ ./banker 10 5 7
+[retorno: 0]
+$ cat result.txt
+Allocate to customer 0 the resources 0 2 1
+Allocate to customer 2 the resources 3 0 2
+Allocate to customer 1 the resources 2 0 0
+Allocate to customer 4 the resources 0 0 2
+Release from customer 0 the resources 0 1 1
+Allocate to customer 3 the resources 2 1 1
+MAXIMUM | ALLOCATION | NEED
+7 5 3 | 0 1 0 | 7 4 3
+3 2 2 | 2 0 0 | 1 2 2
+9 0 2 | 3 0 2 | 6 0 0
+2 2 2 | 2 1 1 | 0 1 1
+4 3 3 | 0 0 2 | 4 3 1
+AVAILABLE 3 3 2
+The resources 3 3 2 are not enough to customer 4 request 4 0 0
+Allocate to customer 1 the resources 1 0 2
+MAXIMUM | ALLOCATION | NEED
+7 5 3 | 0 1 0 | 7 4 3
+3 2 2 | 3 0 2 | 0 2 0
+9 0 2 | 3 0 2 | 6 0 0
+2 2 2 | 2 1 1 | 0 1 1
+4 3 3 | 0 0 2 | 4 3 1
+AVAILABLE 2 3 0
+The customer 0 request 0 2 0 was denied because result in an unsafe state
+MAXIMUM | ALLOCATION | NEED
+7 5 3 | 0 1 0 | 7 4 3
+3 2 2 | 3 0 2 | 0 2 0
+9 0 2 | 3 0 2 | 6 0 0
+2 2 2 | 2 1 1 | 0 1 1
+4 3 3 | 0 0 2 | 4 3 1
+AVAILABLE 2 3 0
+CONFERENCIA: consultas antes/depois identicas; AVAILABLE 2 3 0.
+APROVADO: rollback apos estado inseguro
+
+GRUPO rollback: 1 caso(s) aprovado(s).
+
+[E05] 2026-11-12T09:32:08-03:00 | Tratamento de argumentos, arquivos e comandos invalidos
+$ python3 relatorio/validar.py invalidos
+
+CASO: sem argumentos
+customer.txt: '7,5,3\n3,2,2\n9,0,2\n2,2,2\n4,3,3'
+commands.txt: 'RQ 0 0 2 1\nRQ 2 3 0 2\nRQ 1 2 0 0\nRQ 4 0 0 2\nRL 0 0 1 1\nRQ 3 2 1 1\n*\nRQ 4 4 0 0\nRQ 1 1 0 2\nRQ 0 0 2 0\nRQ 2 0 1 0'
+$ ./banker
+Erro: uso: ./banker quantidade_R0 [quantidade_R1 ...]. 
+[retorno: 1]
+APROVADO: sem argumentos
+
+CASO: argumento negativo
+customer.txt: '7,5,3\n3,2,2\n9,0,2\n2,2,2\n4,3,3'
+commands.txt: 'RQ 0 0 2 1\nRQ 2 3 0 2\nRQ 1 2 0 0\nRQ 4 0 0 2\nRL 0 0 1 1\nRQ 3 2 1 1\n*\nRQ 4 4 0 0\nRQ 1 1 0 2\nRQ 0 0 2 0\nRQ 2 0 1 0'
+$ ./banker -1 5 7
+Erro: cada argumento deve ser um inteiro entre 0 e INT_MAX. 
+[retorno: 1]
+APROVADO: argumento negativo
+
+CASO: argumento nao numerico
+customer.txt: '7,5,3\n3,2,2\n9,0,2\n2,2,2\n4,3,3'
+commands.txt: 'RQ 0 0 2 1\nRQ 2 3 0 2\nRQ 1 2 0 0\nRQ 4 0 0 2\nRL 0 0 1 1\nRQ 3 2 1 1\n*\nRQ 4 4 0 0\nRQ 1 1 0 2\nRQ 0 0 2 0\nRQ 2 0 1 0'
+$ ./banker abc 5 7
+Erro: cada argumento deve ser um inteiro entre 0 e INT_MAX. 
+[retorno: 1]
+APROVADO: argumento nao numerico
+
+CASO: argumentos incompatíveis com customer
+customer.txt: '7,5,3\n3,2,2\n9,0,2\n2,2,2\n4,3,3'
+commands.txt: 'RQ 0 0 2 1\nRQ 2 3 0 2\nRQ 1 2 0 0\nRQ 4 0 0 2\nRL 0 0 1 1\nRQ 3 2 1 1\n*\nRQ 4 4 0 0\nRQ 1 1 0 2\nRQ 0 0 2 0\nRQ 2 0 1 0'
+$ ./banker 10 5
+Erro em customer.txt, linha 1: valores extras ou formato incorreto.
+[retorno: 1]
+APROVADO: argumentos incompatíveis com customer
+
+CASO: customer ausente
+customer.txt: ausente
+commands.txt: 'RQ 0 0 2 1\nRQ 2 3 0 2\nRQ 1 2 0 0\nRQ 4 0 0 2\nRL 0 0 1 1\nRQ 3 2 1 1\n*\nRQ 4 4 0 0\nRQ 1 1 0 2\nRQ 0 0 2 0\nRQ 2 0 1 0'
+$ ./banker 10 5 7
+Erro ao abrir customer.txt: No such file or directory.
+[retorno: 1]
+APROVADO: customer ausente
+
+CASO: commands ausente
+customer.txt: '7,5,3\n3,2,2\n9,0,2\n2,2,2\n4,3,3'
+commands.txt: ausente
+$ ./banker 10 5 7
+Erro ao abrir commands.txt: No such file or directory.
+[retorno: 1]
+APROVADO: commands ausente
+
+CASO: arquivo sem permissao de leitura
+customer.txt: sem permissao de leitura
+commands.txt: 'RQ 0 0 2 1\nRQ 2 3 0 2\nRQ 1 2 0 0\nRQ 4 0 0 2\nRL 0 0 1 1\nRQ 3 2 1 1\n*\nRQ 4 4 0 0\nRQ 1 1 0 2\nRQ 0 0 2 0\nRQ 2 0 1 0'
+$ ./banker 10 5 7
+Erro ao abrir customer.txt: Permission denied.
+[retorno: 1]
+APROVADO: arquivo sem permissao de leitura
+
+CASO: separador CSV incorreto
+customer.txt: '7 5 3\n'
+commands.txt: 'RQ 0 0 2 1\nRQ 2 3 0 2\nRQ 1 2 0 0\nRQ 4 0 0 2\nRL 0 0 1 1\nRQ 3 2 1 1\n*\nRQ 4 4 0 0\nRQ 1 1 0 2\nRQ 0 0 2 0\nRQ 2 0 1 0'
+$ ./banker 10 5 7
+Erro em customer.txt, linha 1: quantidade de recursos ou separador incorreto.
+[retorno: 1]
+APROVADO: separador CSV incorreto
+
+CASO: linha vazia de cliente
+customer.txt: '\n'
+commands.txt: 'RQ 0 0 2 1\nRQ 2 3 0 2\nRQ 1 2 0 0\nRQ 4 0 0 2\nRL 0 0 1 1\nRQ 3 2 1 1\n*\nRQ 4 4 0 0\nRQ 1 1 0 2\nRQ 0 0 2 0\nRQ 2 0 1 0'
+$ ./banker 10 5 7
+Erro em customer.txt, linha 1: esperado inteiro entre 0 e INT_MAX.
+[retorno: 1]
+APROVADO: linha vazia de cliente
+
+CASO: comando incompleto
+customer.txt: '7,5,3\n3,2,2\n9,0,2\n2,2,2\n4,3,3'
+commands.txt: 'RQ 0 1 0\n'
+$ ./banker 10 5 7
+Erro em commands.txt, linha 1: esperado um inteiro nao negativo por recurso.
+[retorno: 1]
+APROVADO: comando incompleto
+
+CASO: comando com valores extras
+customer.txt: '7,5,3\n3,2,2\n9,0,2\n2,2,2\n4,3,3'
+commands.txt: 'RQ 0 1 0 0 1\n'
+$ ./banker 10 5 7
+Erro em commands.txt, linha 1: valores extras ou formato incorreto.
+[retorno: 1]
+APROVADO: comando com valores extras
+
+CASO: cliente inexistente
+customer.txt: '7,5,3\n3,2,2\n9,0,2\n2,2,2\n4,3,3'
+commands.txt: 'RQ 5 0 0 0\n'
+$ ./banker 10 5 7
+Erro em commands.txt, linha 1: indice de cliente invalido.
+[retorno: 1]
+APROVADO: cliente inexistente
+
+CASO: comando desconhecido
+customer.txt: '7,5,3\n3,2,2\n9,0,2\n2,2,2\n4,3,3'
+commands.txt: 'XYZ 0 0 0 0\n'
+$ ./banker 10 5 7
+Erro em commands.txt, linha 1: comando esperado: RQ, RL ou *.
+[retorno: 1]
+APROVADO: comando desconhecido
+
+CASO: quantidade negativa
+customer.txt: '7,5,3\n3,2,2\n9,0,2\n2,2,2\n4,3,3'
+commands.txt: 'RQ 0 -1 0 0\n'
+$ ./banker 10 5 7
+Erro em commands.txt, linha 1: esperado um inteiro nao negativo por recurso.
+[retorno: 1]
+APROVADO: quantidade negativa
+
+CASO: arquivo de comandos vazio
+customer.txt: '7,5,3\n3,2,2\n9,0,2\n2,2,2\n4,3,3'
+commands.txt: ''
+$ ./banker 10 5 7
+Erro: commands.txt vazio. 
+[retorno: 1]
+APROVADO: arquivo de comandos vazio
+
+CASO: inteiro fora do intervalo
+customer.txt: '7,5,3\n3,2,2\n9,0,2\n2,2,2\n4,3,3'
+commands.txt: 'RQ 0 0 2 1\nRQ 2 3 0 2\nRQ 1 2 0 0\nRQ 4 0 0 2\nRL 0 0 1 1\nRQ 3 2 1 1\n*\nRQ 4 4 0 0\nRQ 1 1 0 2\nRQ 0 0 2 0\nRQ 2 0 1 0'
+$ ./banker 2147483648 5 7
+Erro: cada argumento deve ser um inteiro entre 0 e INT_MAX. 
+[retorno: 1]
+APROVADO: inteiro fora do intervalo
+
+GRUPO invalidos: 16 caso(s) aprovado(s).
+
+[E06] 2026-11-12T09:32:08-03:00 | Dimensoes variaveis e casos limite
+$ python3 relatorio/validar.py dimensoes
+
+CASO: dois clientes e quatro recursos
+customer.txt: '2,1,1,3\n1,1,0,2\n'
+commands.txt: 'RQ 0 1 0 0 1\nRL 0 1 0 0 1\n*\n'
+$ ./banker 2 1 1 3
+[retorno: 0]
+$ cat result.txt
+Allocate to customer 0 the resources 1 0 0 1
+Release from customer 0 the resources 1 0 0 1
+MAXIMUM | ALLOCATION | NEED
+2 1 1 3 | 0 0 0 0 | 2 1 1 3
+1 1 0 2 | 0 0 0 0 | 1 1 0 2
+AVAILABLE 2 1 1 3
+APROVADO: dois clientes e quatro recursos
+
+CASO: um cliente e um recurso; sem newline final
+customer.txt: '2'
+commands.txt: 'RQ 0 2\nRL 0 1\n*'
+$ ./banker 2
+[retorno: 0]
+$ cat result.txt
+Allocate to customer 0 the resources 2
+Release from customer 0 the resources 1
+MAXIMUM | ALLOCATION | NEED
+2 | 1 | 1
+AVAILABLE 1
+APROVADO: um cliente e um recurso; sem newline final
+
+GRUPO dimensoes: 2 caso(s) aprovado(s).
+$ python3 relatorio/validar.py limites
+
+CASO: recursos e demandas zero
+customer.txt: '0,0,0\n'
+commands.txt: 'RQ 0 0 0 0\nRL 0 0 0 0\n*\n'
+$ ./banker 0 0 0
+[retorno: 0]
+$ cat result.txt
+Allocate to customer 0 the resources 0 0 0
+Release from customer 0 the resources 0 0 0
+MAXIMUM | ALLOCATION | NEED
+0 0 0 | 0 0 0 | 0 0 0
+AVAILABLE 0 0 0
+APROVADO: recursos e demandas zero
+
+CASO: quantidade no limite de int
+customer.txt: '2147483647\n'
+commands.txt: 'RQ 0 2147483647\nRL 0 2147483647\n*\n'
+$ ./banker 2147483647
+[retorno: 0]
+$ cat result.txt
+Allocate to customer 0 the resources 2147483647
+Release from customer 0 the resources 2147483647
+MAXIMUM | ALLOCATION | NEED
+2147483647 | 0 | 2147483647
+AVAILABLE 2147483647
+APROVADO: quantidade no limite de int
+
+GRUPO limites: 2 caso(s) aprovado(s).
+
+[E07] 2026-11-12T09:32:08-03:00 | Liberacao invalida e continuidade da execucao
+$ python3 relatorio/validar.py liberacao
+
+CASO: liberacao invalida preserva o vetor inteiro e permite continuar
+customer.txt: '2,2\n'
+commands.txt: 'RQ 0 1 1\nRL 0 1 2\n*\nRL 0 1 1\n*\n'
+$ ./banker 2 2
+[retorno: 0]
+$ cat result.txt
+Allocate to customer 0 the resources 1 1
+The customer 0 release 1 2 was denied because exceed its current allocation
+MAXIMUM | ALLOCATION | NEED
+2 2 | 1 1 | 1 1
+AVAILABLE 1 1
+Release from customer 0 the resources 1 1
+MAXIMUM | ALLOCATION | NEED
+2 2 | 0 0 | 2 2
+AVAILABLE 2 2
+APROVADO: liberacao invalida preserva o vetor inteiro e permite continuar
+
+GRUPO liberacao: 1 caso(s) aprovado(s).
+
+[E08] 2026-11-12T09:32:08-03:00 | Compilacao com avisos tratados como erro e nova conferencia
+$ make clean
+rm -f banker
+$ make CFLAGS=-std=c11\ -Wall\ -Wextra\ -Wpedantic\ -Werror\ -O2
+cc  -std=c11 -Wall -Wextra -Wpedantic -Werror -O2 banker.c   -o banker
+$ ./banker 10 5 7
+$ diff -u relatorio/esperado_professor.txt result.txt
+
+VALIDACAO CONCLUIDA: E01 a E08 aprovadas.
+$ date --iso-8601=seconds
+2026-11-12T09:32:09-03:00
+
+Script done on 2026-11-12 09:32:09-03:00 [COMMAND_EXIT_CODE="0"]
+Script started on 2026-11-12 10:14:14-03:00 [COMMAND="python3 /tmp/banker-github-validacao.py" <not executed on terminal>]
+
+=== VALIDACAO DOS QUATRO ARQUIVOS PARA O GITHUB ===
+$ date --iso-8601=seconds
+2026-11-12T10:14:14-03:00
+[retorno: 0]
+$ whoami
+bdmf
+[retorno: 0]
+$ pwd
+/home/bdmf/Code/SO/AlgoritmoDeBanker
+[retorno: 0]
+Conteudo versionado: Makefile, README.md, banker.c, evidencias.log
+Entradas do professor copiadas apenas para o teste temporario.
+$ make clean
+rm -f banker
+[retorno: 0]
+$ make
+cc  -std=c11 -Wall -Wextra -Wpedantic -O2 banker.c   -o banker
+[retorno: 0]
+$ ./banker 10 5 7
+[retorno: 0]
+$ cat result.txt
+Allocate to customer 0 the resources 0 2 1
+Allocate to customer 2 the resources 3 0 2
+Allocate to customer 1 the resources 2 0 0
+Allocate to customer 4 the resources 0 0 2
+Release from customer 0 the resources 0 1 1
+Allocate to customer 3 the resources 2 1 1
+MAXIMUM | ALLOCATION | NEED
+7 5 3 | 0 1 0 | 7 4 3
+3 2 2 | 2 0 0 | 1 2 2
+9 0 2 | 3 0 2 | 6 0 0
+2 2 2 | 2 1 1 | 0 1 1
+4 3 3 | 0 0 2 | 4 3 1
+AVAILABLE 3 3 2
+The resources 3 3 2 are not enough to customer 4 request 4 0 0
+Allocate to customer 1 the resources 1 0 2
+The customer 0 request 0 2 0 was denied because result in an unsafe state
+The customer 2 request 0 1 0 was denied because exceed its maximum allocation
+[retorno: 0]
+CONFERENCIA: saida completa do professor aprovada.
+
+CASO DO README: um cliente e um recurso.
+$ ./banker 2
+[retorno: 0]
+$ cat result.txt
+Allocate to customer 0 the resources 1
+Release from customer 0 the resources 1
+MAXIMUM | ALLOCATION | NEED
+2 | 0 | 2
+AVAILABLE 2
+[retorno: 0]
+
+CASO LIMITE DO README: zero recursos.
+$ ./banker 0
+[retorno: 0]
+$ cat result.txt
+Allocate to customer 0 the resources 0
+Release from customer 0 the resources 0
+MAXIMUM | ALLOCATION | NEED
+0 | 0 | 0
+AVAILABLE 0
+[retorno: 0]
+
+CASO INVALIDO DO README: quantidade negativa.
+$ ./banker 0
+Erro em commands.txt, linha 1: esperado um inteiro nao negativo por recurso.
+[retorno: 1]
+$ make clean
+rm -f banker
+[retorno: 0]
+
+VALIDACAO APROVADA: compilacao, exemplo, limite, entrada invalida e limpeza.
+
+Script done on 2026-11-12 10:14:14-03:00 [COMMAND_EXIT_CODE="0"]
